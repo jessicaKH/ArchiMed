@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  bracelet-simulator:
+    build: ./bracelet-simulator
+    depends_on:
+      - boitier-server
+
+  boitier-server:
+    build: ./boitier-server
+    ports:
+      - "5000:5000"
+    depends_on:
+      - cloud-backend
+
+  cloud-backend:
+    build: ./cloud-backend
+    ports:
+      - "3005:3005"
+    environment:
+      - SMS_URL=http://sms-mock:7000/send
+    depends_on:
+      - sms-mock
+
+  sms-mock:
+    build: ./sms-mock
+    ports:
+      - "7000:7000"
+
+  front-visualiser:
+    build: ./front-visualiser
+    ports:
+      - "5173:80"
+    depends_on:
+      - cloud-backend
