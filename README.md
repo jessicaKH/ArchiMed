@@ -138,6 +138,6 @@ Tu verras la courbe de rythme cardiaque :
 
 ## 👩‍💻 Auteur
 
-Projet porté par **Camille Antonios, Hajar El Gholabzouri, Jessica Kahungu Gauthier Martin & Amélie Muller**.
+Projet porté par **Camille Antonios, Hajar El Gholabzouri, Jessica Kahungu, Gauthier Martin & Amélie Muller**.
 
 ---
