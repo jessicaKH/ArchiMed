@@ -48,7 +48,7 @@ Le système repose sur **5 services conteneurisés** orchestrés via **Docker Co
 
 ### 📦 2. Cloner le dépôt
 ```bash
-git clone https://github.com/<ton-user>/ArchiMed.git
+git clone https://github.com/jessicaKH/ArchiMed.git
 cd ArchiMed
 ````
 
