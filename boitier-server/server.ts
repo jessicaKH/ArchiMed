@@ -1,20 +1,30 @@
-import express from "express";
 import fetch from "node-fetch";
-
-const app = express();
-app.use(express.json());
+import { WebSocketServer } from "ws";
 
 const CLOUD_URL = "http://cloud-backend:3005/data";
 
-app.post("/data", async (req, res) => {
-  const { bpm } = req.body;
-  console.log(`[Boîtier] Received BPM: ${bpm}`);
-  await fetch(CLOUD_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ bpm }),
-  });
-  res.json({ status: "sent" });
-});
+const NUMERO =  "+33742934852";
 
-app.listen(5000, () => console.log("[Boîtier] Running on port 5000"));
+const wss = new WebSocketServer({ port: 5000 });
+
+
+wss.on('connection', (ws: any) => {
+  console.log('Bracelet connecté ✅');
+
+  ws.on('message', async (raw: string) => {
+    const msg = JSON.parse(raw);
+    const { type, data } = msg;
+
+    if (type === 'bpm') {
+      console.log(`[Boîtier] Received BPM: ${data}`);
+      await fetch(CLOUD_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bpm: data }),
+      });
+    } else if (type === 'heartAttack') {
+      console.log("🚨 CRISE CARDIAQUE détectée par le bracelet");
+      console.log("Envoi d'un SMS au ", NUMERO);
+    }
+  });
+});
