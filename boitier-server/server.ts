@@ -25,6 +25,13 @@ wss.on('connection', (ws: any) => {
     } else if (type === 'heartAttack') {
       console.log("🚨 CRISE CARDIAQUE détectée par le bracelet");
       console.log("Envoi d'un SMS au ", NUMERO);
+      await fetch(process.env.DISCORD_WEBHOOK_URL!, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: `🚨 **Alerte santé :** un rythme cardiaque anormalement élevé a été détecté (${data} BPM). Veuillez vérifier l’état de la personne concernée dès que possible ou contacter les secours si nécessaire.`,
+        }),
+      });
     }
   });
 });
