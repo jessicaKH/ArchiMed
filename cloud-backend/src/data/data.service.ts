@@ -1,10 +1,13 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { Kafka, logLevel, Consumer } from 'kafkajs';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class DataService implements OnModuleInit {
   private consumer: Consumer;
   private readonly bpm_topic = 'bpm';
+
+  constructor(private prisma: PrismaService) {}
 
   async connectKafka() {
       let connected = false;
@@ -37,7 +40,11 @@ export class DataService implements OnModuleInit {
       eachMessage: async ({ message }) => {
         const value = JSON.parse(message.value?.toString() || '{}');
         if (value.bpm > 50) {
-          console.log(`📥 Received & accepted: ${value.bpm}`);
+          console.log(`📥 Received & accepted: ${value.bpm} that was sent at ${new Date(value.sending_timestamp)}`);
+
+          const bpm = value.bpm;
+
+          await this.prisma.bpmData.create({ data: { bpm } });
         } else {
           console.log(`🚫 Filtered out: ${value.bpm}`);
         }

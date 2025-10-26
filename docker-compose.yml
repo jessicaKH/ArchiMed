@@ -18,8 +18,6 @@ services:
 
   cloud-backend:
     build: ./cloud-backend
-    environment:
-      - DATABASE_URL="file:./dev.db"
     ports:
       - "3005:3005"
     depends_on:

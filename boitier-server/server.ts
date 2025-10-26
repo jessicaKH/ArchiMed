@@ -45,7 +45,10 @@ wss.on('connection', async (ws: any) => {
       console.log(`[Boîtier] Received BPM: ${data}`);
       await producer.send({
         topic: "bpm",
-        messages: [{ value: JSON.stringify({ bpm: data }) }],
+        messages: [{ value: JSON.stringify({ 
+          bpm: data,
+          sending_timestamp: Date.now()
+         }) }],
       });
 
       console.log("|bpm| Sent BPM data to Kafka !");
