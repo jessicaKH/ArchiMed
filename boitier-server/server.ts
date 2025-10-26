@@ -1,5 +1,6 @@
 import fetch from "node-fetch";
 import { WebSocketServer } from "ws";
+import { Kafka, logLevel } from 'kafkajs';
 
 const CLOUD_URL = "http://cloud-backend:3005/data";
 
@@ -7,9 +8,34 @@ const NUMERO =  "+33742934852";
 
 const wss = new WebSocketServer({ port: 5000 });
 
+let producer: any;
 
-wss.on('connection', (ws: any) => {
+async function connectKafka() {
+  let connected = false;
+  while (!connected) {
+    try {
+      const kafka = new Kafka({
+        clientId: 'boitier',
+        brokers: [process.env.KAFKA_BROKER || 'kafka:9092'],
+        logLevel: logLevel.NOTHING
+      });
+      producer = kafka.producer();
+      await producer.connect();
+      connected = true;
+      console.log("'Boitier' producer connected to Kafka !");
+    } catch (err) {
+      console.log("Erreur Kafka, retrying in 3s...");
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
+}
+
+
+wss.on('connection', async (ws: any) => {
   console.log('Bracelet connecté ✅');
+
+  await connectKafka();
+  console.log("'Boitier' producer connected to Kafka !");
 
   ws.on('message', async (raw: string) => {
     const msg = JSON.parse(raw);
@@ -17,12 +43,14 @@ wss.on('connection', (ws: any) => {
 
     if (type === 'bpm') {
       console.log(`[Boîtier] Received BPM: ${data}`);
-      await fetch(CLOUD_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bpm: data }),
+      await producer.send({
+        topic: "bpm",
+        messages: [{ value: JSON.stringify({ bpm: data }) }],
       });
-    } else if (type === 'heartAttack') {
+
+      console.log("|bpm| Sent BPM data to Kafka !");
+    } 
+    else if (type === 'heartAttack') {
       console.log("🚨 CRISE CARDIAQUE détectée par le bracelet");
       console.log("Envoi d'un SMS au ", NUMERO);
       await fetch(process.env.DISCORD_WEBHOOK_URL!, {
