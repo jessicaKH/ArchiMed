@@ -12,20 +12,13 @@ services:
       - "5000:5000"
     depends_on:
       - cloud-backend
+    environment:
+      - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/1431783528843972619/TL_S08qiZAGryAwiFwLCK4FOJI0DflAVz4l5v4VeVX3EJNCIF_wv_rW1wLg1MzQeXwEo
 
   cloud-backend:
     build: ./cloud-backend
     ports:
       - "3005:3005"
-    environment:
-      - SMS_URL=http://sms-mock:7000/send
-    depends_on:
-      - sms-mock
-
-  sms-mock:
-    build: ./sms-mock
-    ports:
-      - "7000:7000"
 
   front-visualiser:
     build: ./front-visualiser
