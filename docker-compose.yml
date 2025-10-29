@@ -14,6 +14,10 @@ services:
       - cloud-backend
     environment:
       - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/1431783528843972619/TL_S08qiZAGryAwiFwLCK4FOJI0DflAVz4l5v4VeVX3EJNCIF_wv_rW1wLg1MzQeXwEo
+      - INFLUX_URL=http://influxdb:8086
+      - INFLUX_TOKEN=vldMpJp-oiI7clGJluG3NIrYGsWoyUWx565Bbk0zZFVFuQhpT8bQE6Ib1xpOS4ekpm6v0ClhRs6oKS1HVha5mA==
+      - INFLUX_ORG=archimed
+      - INFLUX_BUCKET=health
 
   cloud-backend:
     build: ./cloud-backend
@@ -26,3 +30,8 @@ services:
       - "5173:80"
     depends_on:
       - cloud-backend
+
+networks:
+  default:
+    external:
+      name: archimed-network
