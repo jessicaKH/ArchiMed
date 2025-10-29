@@ -39,7 +39,7 @@ export default function App() {
     datasets: [
       {
         label: "BPM (fréquence cardiaque)",
-        data: data.map((d) => d.bpm),
+        data: data.map((d) => d.value),
         borderColor: "#ff4d4f",
         backgroundColor: "rgba(255,77,79,0.2)",
         tension: 0.3,

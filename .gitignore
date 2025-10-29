@@ -34,3 +34,5 @@ Thumbs.db
 *.db
 **/coverage/
 **/logs/
+
+influx-token.txt

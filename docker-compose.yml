@@ -43,7 +43,7 @@ services:
     logging:
       driver: "none"
     volumes:
-      - ./data/kafka:/var/lib/kafka/data
+      - ./kafka-data/:/var/lib/kafka/data
     healthcheck:
       test: ["CMD", "bash", "-c", "kafka-broker-api-versions --bootstrap-server kafka:9092 || exit 1"]
       interval: 10s
@@ -57,3 +57,23 @@ services:
       - "5173:80"
     depends_on:
       - cloud-backend
+  
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123
+      - DOCKER_INFLUXDB_INIT_ORG=myorg
+      - DOCKER_INFLUXDB_INIT_BUCKET=mybucket
+      - DOCKER_INFLUXDB_INIT_RETENTION=1w
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN_FILE=/run/secrets/influx_token
+    secrets:
+      - influx_token
+
+secrets:
+  influx_token:
+    file: ./influx-token.txt

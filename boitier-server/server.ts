@@ -46,7 +46,9 @@ wss.on('connection', async (ws: any) => {
       await producer.send({
         topic: "bpm",
         messages: [{ value: JSON.stringify({ 
-          bpm: data,
+          client_id: "jeanjacques",
+          measurement_category: "bpm",
+          measurement_value: data,
           sending_timestamp: Date.now()
          }) }],
       });
