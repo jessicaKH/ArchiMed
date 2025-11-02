@@ -1,4 +1,3 @@
-import { InfluxDB, Point} from "@influxdata/influxdb-client";
 import fetch from "node-fetch";
 import { WebSocketServer } from "ws";
 import { Kafka, logLevel } from 'kafkajs';

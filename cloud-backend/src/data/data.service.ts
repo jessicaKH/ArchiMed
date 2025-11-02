@@ -69,7 +69,6 @@ export class DataService implements OnModuleInit {
 
         // --- Écriture dans InfluxDB ---
         const point = new Point('bpm')
-          .tag('device', 'boitier-1')
           .tag('patient', 'patient-1')
           .floatField('value', bpm)
           .timestamp(new Date(value.sending_timestamp));
