@@ -3,6 +3,8 @@ import fetch from "node-fetch";
 import { WebSocketServer } from "ws";
 import { Kafka, logLevel } from 'kafkajs';
 
+const NUMERO = "+33742934852";
+
 const wss = new WebSocketServer({ port: 5000 });
 
 
@@ -56,6 +58,7 @@ wss.on('connection', async (ws: any) => {
     } 
     else if (type === 'heartAttack') {
       console.log("🚨 CRISE CARDIAQUE détectée par le bracelet");
+      console.log("Envoi d'un SMS au ", NUMERO);
       await fetch(process.env.DISCORD_WEBHOOK_URL!, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
