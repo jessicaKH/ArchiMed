@@ -1,53 +1,61 @@
 import { InfluxDB, Point} from "@influxdata/influxdb-client";
 import fetch from "node-fetch";
 import { WebSocketServer } from "ws";
-
-const CLOUD_URL = "http://cloud-backend:3005/data";
-
-const NUMERO =  "+33742934852";
+import { Kafka, logLevel } from 'kafkajs';
 
 const wss = new WebSocketServer({ port: 5000 });
 
-const url = process.env.INFLUX_URL || "http://influxdb:8086";
-const token = process.env.INFLUX_TOKEN;
-const org = process.env.INFLUX_ORG;
-const bucket = process.env.INFLUX_BUCKET;
 
-if (!token || !org || !bucket) {
-  throw new Error("⚠️ Variables INFLUX_* manquantes");
+
+// -- Kafka setup
+let producer: any;
+
+async function connectKafka() {
+  let connected = false;
+  while (!connected) {
+    try {
+      const kafka = new Kafka({
+        clientId: 'boitier',
+        brokers: [process.env.KAFKA_BROKER || 'kafka:9092'],
+        logLevel: logLevel.NOTHING
+      });
+      producer = kafka.producer();
+      await producer.connect();
+      connected = true;
+      console.log("'Boitier' producer connected to Kafka !");
+    } catch (err) {
+      console.log("Erreur Kafka, retrying in 3s...");
+      await new Promise(r => setTimeout(r, 3000));
+    }
+  }
 }
 
-const influxDB = new InfluxDB({ url, token });
-const writeApi = influxDB.getWriteApi(org, bucket, 'ns');
-
-wss.on('connection', (ws: any) => {
+wss.on('connection', async (ws: any) => {
   console.log('Bracelet connecté ✅');
+
+  await connectKafka();
+  console.log("'Boitier' producer connected to Kafka !");
 
   ws.on('message', async (raw: string) => {
     const msg = JSON.parse(raw);
     const { type, data } = msg;
 
+    // - envoie des données à Kafka
     if (type === 'bpm') {
       console.log(`[Boîtier] Received BPM: ${data}`);
-      // envoie au backend ?? pq
-      await fetch(CLOUD_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bpm: data }),
+      await producer.send({
+        topic: "bpm",
+        messages: [{ value: JSON.stringify({ 
+          bpm: data,
+          sending_timestamp: Date.now()
+         }) }],
       });
-      // écriture dans InfluxDB
-      const point = new Point('bpm')
-      .tag('device', 'boitier-1')
-      .tag('patient', 'patient-1')
-      .floatField('value', data);
 
-      writeApi.writePoint(point);
-      await writeApi.flush();
-      console.log(`[InfluxDB] ✅ Écrit BPM = ${data}`);
+      console.log("|bpm| Sent BPM data to Kafka !");
 
-    } else if (type === 'heartAttack') {
+    } 
+    else if (type === 'heartAttack') {
       console.log("🚨 CRISE CARDIAQUE détectée par le bracelet");
-      console.log("Envoi d'un SMS au ", NUMERO);
       await fetch(process.env.DISCORD_WEBHOOK_URL!, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
