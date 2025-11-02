@@ -1,1 +1,1 @@
-docker compose build && docker compose up --no-attach kafka
+docker compose up --build --no-attach kafka

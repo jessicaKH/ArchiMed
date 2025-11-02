@@ -1,6 +1,6 @@
 const WebSocket = require('ws');
 
-const WS_URL = 'ws://boitier-server:5000/data';
+const WS_URL = 'ws://boitier-server:5000';
 const ws = new WebSocket(WS_URL);
 
 let heartRates = [];

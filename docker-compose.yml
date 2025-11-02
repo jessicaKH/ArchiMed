@@ -15,6 +15,7 @@ services:
       - kafka
     environment:
       - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/1431783528843972619/TL_S08qiZAGryAwiFwLCK4FOJI0DflAVz4l5v4VeVX3EJNCIF_wv_rW1wLg1MzQeXwEo
+      
 
   cloud-backend:
     build: ./cloud-backend
@@ -22,6 +23,11 @@ services:
       - "3005:3005"
     depends_on:
       - kafka
+    environment:
+      - INFLUX_URL=http://influxdb:8086
+      - INFLUX_TOKEN=1tUJ8TUG91tkaMeFjIUVrgAfdXT1KrOXgJmI0cUncn9y3_NrHQhkaHRbSWlcblHLWHe5EBwmXpW77E-ZVitLXA==
+      - INFLUX_ORG=archimed
+      - INFLUX_BUCKET=health
 
   kafka:
     image: confluentinc/cp-kafka:7.6.0
@@ -40,8 +46,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
       CLUSTER_ID: abcdefghijklmnopqrstuv
-    logging:
-      driver: "none"
     volumes:
       - ./data/kafka:/var/lib/kafka/data
     healthcheck:
@@ -57,3 +61,25 @@ services:
       - "5173:80"
     depends_on:
       - cloud-backend
+
+
+  influxdb:
+    image: influxdb:2
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123
+      - DOCKER_INFLUXDB_INIT_BUCKET=health
+      - DOCKER_INFLUXDB_INIT_ORG=archimed
+      - DOCKER_INFLUXDB_INIT_RETENTION=7d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN_FILE=/run/secrets/influx-token
+    secrets:
+      - influx-token
+
+
+secrets:
+  influx-token:
+    file: ./influx-token.txt
