@@ -25,7 +25,7 @@ services:
       - kafka
     environment:
       - INFLUX_URL=http://influxdb:8086
-      - INFLUX_TOKEN=vldMpJp-oiI7clGJluG3NIrYGsWoyUWx565Bbk0zZFVFuQhpT8bQE6Ib1xpOS4ekpm6v0ClhRs6oKS1HVha5mA==
+      - INFLUX_TOKEN=1tUJ8TUG91tkaMeFjIUVrgAfdXT1KrOXgJmI0cUncn9y3_NrHQhkaHRbSWlcblHLWHe5EBwmXpW77E-ZVitLXA==
       - INFLUX_ORG=archimed
       - INFLUX_BUCKET=health
 
@@ -46,8 +46,6 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
       CLUSTER_ID: abcdefghijklmnopqrstuv
-    logging:
-      driver: "none"
     volumes:
       - ./data/kafka:/var/lib/kafka/data
     healthcheck:
@@ -64,7 +62,24 @@ services:
     depends_on:
       - cloud-backend
 
-networks:
-  default:
-    external:
-      name: archimed-network
+
+  influxdb:
+    image: influxdb:2
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=admin123
+      - DOCKER_INFLUXDB_INIT_BUCKET=health
+      - DOCKER_INFLUXDB_INIT_ORG=archimed
+      - DOCKER_INFLUXDB_INIT_RETENTION=7d
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN_FILE=/run/secrets/influx-token
+    secrets:
+      - influx-token
+
+
+secrets:
+  influx-token:
+    file: ./influx-token.txt
