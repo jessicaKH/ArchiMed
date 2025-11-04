@@ -16,6 +16,12 @@ services:
     environment:
       - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/1431783528843972619/TL_S08qiZAGryAwiFwLCK4FOJI0DflAVz4l5v4VeVX3EJNCIF_wv_rW1wLg1MzQeXwEo
       
+  web-backend:
+    build: ./web-interface-backend
+    ports:
+      - "3030:3030"
+    depends_on:
+      - influxdb
 
   cloud-backend:
     build: ./cloud-backend
