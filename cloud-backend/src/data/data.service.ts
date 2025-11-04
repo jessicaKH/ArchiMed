@@ -69,14 +69,20 @@ export class DataService implements OnModuleInit {
     console.log(`📥 Received tchicardia alert with BPM ${value.bpm} (sent at ${new Date(value.sending_timestamp).toLocaleTimeString()})`);
 
     // --- Écriture dans InfluxDB ---
-    const point = new Point('alert')
+    const tachychardiePoint = new Point('alert')
         .tag('patient', 'patient-1')
         .stringField("type", "tachicardie")
         .floatField('value', value.bpm)
         .timestamp(new Date(value.sending_timestamp));
 
+    const bpmPoint = new Point('bpm')
+    .tag('patient', 'patient-1')
+    .floatField('value', value.bpm)
+    .timestamp(new Date(value.sending_timestamp));
+
     try {
-      this.influxWriteApi.writePoint(point);
+      this.influxWriteApi.writePoint(tachychardiePoint);
+      this.influxWriteApi.writePoint(bpmPoint);
       await this.influxWriteApi.flush();
       console.log(`💾 Stored tachicardia alert with BPM ${value.bpm} in InfluxDB`);
       return { statusCode: 201, message: `Tachicardia alert stored with BPM ${value.bpm}` };

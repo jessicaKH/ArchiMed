@@ -46,13 +46,15 @@ function startSimulation() {
     setInterval(() => {
         if (heartRates.length === 0) return;
         const avg = heartRates.reduce((a, b) => a + b, 0) / heartRates.length;
-        console.log("BPM envoyé au boitier : ", Math.round(avg));
-        emit('bpm', Math.round(avg));
         heartRates = [];
         if(avg>100) {
             console.log("Crise Cardiaque détectée, envoi du signal au boitier");
             emit('heartAttack', Math.round(avg));
             cardiacArrest = false;
+        }
+        else {
+            console.log("BPM envoyé au boitier : ", Math.round(avg));
+            emit('bpm', Math.round(avg));
         }
     }, 10000);
 
