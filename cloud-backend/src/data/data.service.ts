@@ -1,6 +1,7 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit, HttpException } from '@nestjs/common';
 import { Kafka, logLevel, Consumer } from 'kafkajs';
 import { InfluxDB, Point } from '@influxdata/influxdb-client';
+import {TachicardieDto} from "./tachicardie.dto";
 
 
 @Injectable()
@@ -54,34 +55,68 @@ export class DataService implements OnModuleInit {
     console.log('✅ Consumer connected & subscribed to BPM topic');
 
     await this.consumer.run({
-      eachMessage: async ({ message }) => {
-        const value = JSON.parse(message.value?.toString() || '{}');
-        if ( !value.bpm ) return;
-        if ( value.bpm <=50 ){
-          console.log(`🚫 Ignored BPM value: ${value.bpm}`);
-          return;
+      eachMessage: async ({ topic, message }) => {
+        if(topic === this.bpm_topic){
+          await this.handleBpmTopic(message);
         }
-        console.log(`📥 Received & accepted: ${value.bpm} that was sent at ${new Date(value.sending_timestamp)}`);
-
-        const bpm = value.bpm;
-
-        console.log(`📥 Received BPM ${bpm} (sent at ${new Date(value.sending_timestamp).toLocaleTimeString()})`);
-
-        // --- Écriture dans InfluxDB ---
-        const point = new Point('bpm')
-          .tag('patient', 'patient-1')
-          .floatField('value', bpm)
-          .timestamp(new Date(value.sending_timestamp));
-
-        try {
-          this.influxWriteApi.writePoint(point);
-          await this.influxWriteApi.flush();
-          console.log(`💾 Stored BPM ${bpm} in InfluxDB`);
-        } catch (err) {
-          console.error('❌ Failed to write to InfluxDB:', err.message);
-        }
-        
       },
     });
+  }
+
+  async handleTachicardia(value: TachicardieDto){
+    if ( !value.bpm ) return;
+
+    console.log(`📥 Received tchicardia alert with BPM ${value.bpm} (sent at ${new Date(value.sending_timestamp).toLocaleTimeString()})`);
+
+    // --- Écriture dans InfluxDB ---
+    const tachychardiePoint = new Point('alert')
+        .tag('patient', 'patient-1')
+        .stringField("type", "tachicardie")
+        .floatField('value', value.bpm)
+        .timestamp(new Date(value.sending_timestamp));
+
+    const bpmPoint = new Point('bpm')
+    .tag('patient', 'patient-1')
+    .floatField('value', value.bpm)
+    .timestamp(new Date(value.sending_timestamp));
+
+    try {
+      this.influxWriteApi.writePoint(tachychardiePoint);
+      this.influxWriteApi.writePoint(bpmPoint);
+      await this.influxWriteApi.flush();
+      console.log(`💾 Stored tachicardia alert with BPM ${value.bpm} in InfluxDB`);
+      return { statusCode: 201, message: `Tachicardia alert stored with BPM ${value.bpm}` };
+    } catch (err) {
+      console.error('❌ Failed to write to InfluxDB:', err.message);
+      throw new HttpException({ statusCode: 500, message: 'Failed to write to InfluxDB', error: err.message }, 500);
+    }
+  }
+
+  async handleBpmTopic(message){
+    const value = JSON.parse(message.value?.toString() || '{}');
+    if ( !value.bpm ) return;
+    if ( value.bpm <=50 ){
+      console.log(`🚫 Ignored BPM value: ${value.bpm}`);
+      return;
+    }
+    console.log(`📥 Received & accepted: ${value.bpm} that was sent at ${new Date(value.sending_timestamp)}`);
+
+    const bpm = value.bpm;
+
+    console.log(`📥 Received BPM ${bpm} (sent at ${new Date(value.sending_timestamp).toLocaleTimeString()})`);
+
+    // --- Écriture dans InfluxDB ---
+    const point = new Point('bpm')
+        .tag('patient', 'patient-1')
+        .floatField('value', bpm)
+        .timestamp(new Date(value.sending_timestamp));
+
+    try {
+      this.influxWriteApi.writePoint(point);
+      await this.influxWriteApi.flush();
+      console.log(`💾 Stored BPM ${bpm} in InfluxDB`);
+    } catch (err) {
+      console.error('❌ Failed to write to InfluxDB:', err.message);
+    }
   }
 }
