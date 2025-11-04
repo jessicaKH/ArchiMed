@@ -41,5 +41,43 @@ export class InfluxService {
       });
     });
   }
-}
 
+  async getLatestAlerts(): Promise<{ type?: string; value?: number; timestamp: string }[]> {
+    const fluxQuery = `
+      from(bucket: "${this.bucket}")
+        |> range(start: -1d)
+        |> filter(fn: (r) => r["_measurement"] == "alert")
+        |> filter(fn: (r) => r["patient"] == "patient-1")
+        |> sort(columns: ["_time"], desc: true)
+        |> limit(n: 10)
+    `;
+    // On regroupe les champs par timestamp
+    const grouped: Record<string, { type?: string; value?: number; timestamp: string }> = {};
+    return new Promise((resolve, reject) => {
+      this.queryApi.queryRows(fluxQuery, {
+        next(row, tableMeta) {
+          const o = tableMeta.toObject(row);
+          const ts = o._time;
+          if (!grouped[ts]) {
+            grouped[ts] = { timestamp: ts };
+          }
+          if (o._field === "type") {
+            grouped[ts].type = o._value;
+          } else if (o._field === "value") {
+            grouped[ts].value = o._value;
+          }
+        },
+        error(error) {
+          reject(error);
+        },
+        complete() {
+          // On filtre pour ne garder que les objets complets
+          const results = Object.values(grouped)
+            .filter(obj => obj.type !== undefined && obj.value !== undefined)
+            .slice(0, 10); // Limite à 10 alertes
+          resolve(results);
+        },
+      });
+    });
+  }
+}

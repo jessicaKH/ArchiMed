@@ -65,6 +65,17 @@ wss.on('connection', async (ws: any) => {
           content: `🚨 **Alerte santé :** un rythme cardiaque anormalement élevé a été détecté (${data} BPM). Veuillez vérifier l’état de la personne concernée dès que possible ou contacter les secours si nécessaire.`,
         }),
       });
+      try{
+        await fetch("http://cloud-backend:3005/tachycardie", {
+          method: 'POST',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bpm: data, sending_timestamp: Date.now() })
+        })
+      }catch(e){
+        console.log("couldn't send tachicardia info to cloud : ", e);
+      }
+
+
     }
   });
 });

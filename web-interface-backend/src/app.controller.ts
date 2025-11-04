@@ -18,4 +18,10 @@ export class AppController {
   async getLatestBpm() {
     return await this.influxService.getLatestBpm();
   }
+
+
+  @Get('alerts')
+  async getLatestAlerts(){
+    return await this.influxService.getLatestAlerts();
+  }
 }

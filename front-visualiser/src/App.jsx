@@ -15,6 +15,7 @@ ChartJS.register(LineElement, PointElement, CategoryScale, LinearScale, Title, T
 
 export default function App() {
   const [data, setData] = useState([]);
+  const [alerts, setAlerts] = useState([]); // Ajout du state pour les alertes
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,9 +28,24 @@ export default function App() {
       }
     };
 
+    const fetchAlerts = async () => {
+      try {
+        const res = await fetch("http://localhost:3030/alerts");
+        const json = await res.json();
+        setAlerts(json); // Stockage dans le state
+      } catch (e) {
+        console.error("Erreur récupération BPM:", e);
+      }
+    };
+
+    fetchAlerts();
     fetchData();
     const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
+    const alertsInterval = setInterval(fetchAlerts, 5000);
+    return () => {
+      clearInterval(interval);
+      clearInterval(alertsInterval);
+    };
   }, []);
 
   const chartData = {
@@ -124,10 +140,16 @@ export default function App() {
 
             <div className="card large">
               <h3>Historique des alertes</h3>
-              <div className="card small"><h3>Manque d'oxygenation</h3>    3/11/2025</div>
-              <div className="card small"><h3>Chute</h3>    3/11/2025</div>
+              <div className="alertContainer" style={{ maxHeight: "250px", overflowY: "auto" }}>
+                {alerts.map((alert, idx) => (
+                  <div className="card small" key={idx}>
+                    <h3>{alert.type}</h3>
+                    Valeur relevée : {alert.value} - {new Date(alert.timestamp).toLocaleDateString("fr-FR")} - {new Date(alert.timestamp).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                  </div>
+                ))}
               </div>
             </div>
+          </div>
         </main>
       </div>
   );
