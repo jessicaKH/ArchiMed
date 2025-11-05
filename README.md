@@ -101,7 +101,7 @@ Tu verras la courbe de rythme cardiaque :
 * Architecture microservices & communication inter-conteneurs
 * Séparation claire des rôles (IoT → Edge → Cloud → Notification)
 * Gestion d’un **pipeline de données médicales** simulé
-* Intégration NestJS + Prisma pour le stockage & analyse
+* Combinaison entre NestJS, Kafka et InfluxDB 
 * Conteneurisation complète via Docker Compose
 * Simulation d’événements temps réel et d’alertes critiques
 
