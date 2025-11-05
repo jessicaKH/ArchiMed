@@ -7,36 +7,32 @@ Il illustre un **pipeline de données complet** pour la simulation d’un **brac
 
 ## ⚙️ Architecture globale
 
-Le système repose sur **5 services conteneurisés** orchestrés via **Docker Compose** :
+Le système repose sur **7 services conteneurisés** orchestrés via **Docker Compose** :
 
 ```
 
-🩸 BraceletSimulator (Java)
-↓  (HTTP)
+🩸 BraceletSimulator (Node.js)
+↓  (Websocket)
 📦 BoitierServer (Node.js)
-↓  (HTTP)
-☁️ CloudBackend (NestJS + Prisma + SQLite)
-↳ analyse des données, détection de crise, log et alerte
-↓  (HTTP)
-📱 SmsMock (Express)
-→ simule l’envoi d’un SMS d’urgence
+↓   ↳ Envoi de SMS en cas d'alerte
+📦 Broker Kafka
 ↓
+☁️ CloudBackend (NestJS)
+↓ analyse, filtrage et stockage des données
+📦 InfluxDB
+↓
+☁️ web-backend (NestJS)
+↓ (HTTP)
 📊 FrontVisualizer (Vite + React)
-→ visualisation temps réel des BPM
+→ visualisation temps réel des BPM et alertes
 
 ````
 
 ---
 
-## 🧩 Description rapide des modules
+## Contributing
 
-| Service | Technologie | Rôle |
-|----------|--------------|------|
-| **bracelet-simulator** | Java 17 + Maven | Simule un bracelet connecté : génère des valeurs de BPM chaque seconde et envoie les données au boîtier. Si le BPM dépasse 150, il envoie immédiatement une alerte. |
-| **boitier-server** | Node.js (TypeScript) | Reçoit les données du bracelet et les transfère au serveur cloud. |
-| **cloud-backend** | NestJS + Prisma + SQLite | Reçoit, stocke et analyse les BPM. Si une crise est détectée (BPM > 150), il appelle le serveur SMS. |
-| **sms-mock** | Express (Node.js) | Simule un service d’envoi de SMS — affiche dans la console les numéros et le message d’alerte. |
-| **front-visualiser** | React + Vite + Nginx | Interface graphique du médecin : affiche la courbe de BPM reçue depuis le backend. |
+Pour contribuer au projet, il suffit de créer un fork du repository et d'ouvrir une Pull Request une fois votre implémentation terminée. Notre équipe fera une review de votre PR et elle sera merge si celle-ci correspond aux standards de développement du projet.
 
 ---
 
@@ -55,13 +51,10 @@ cd ArchiMed
 ### ▶️ 3. Lancer la démo
 
 ```bash
-docker-compose up --build
+./build-and-start.sh
 ```
 
-Cette commande :
-
-* construit tous les services,
-* démarre automatiquement le pipeline complet.
+Cette commande construit tous les services, et l'architecture complète du projet.
 
 ### ⏱️ 4. Attendre le démarrage
 
@@ -78,11 +71,11 @@ Tu verras apparaître :
 
 ## 🩸 Scénario de démonstration
 
-1. Le **bracelet** envoie un BPM toutes les secondes.
-2. Toutes les 20 secondes, il simule une **crise cardiaque (BPM ≈ 180)**.
-3. Le **boîtier** relaie ces données au **serveur cloud**.
-4. Le **cloud** détecte la crise (`bpm > 150`) et envoie une requête vers le **serveur SMS**.
-5. Le **SMS mock** affiche dans la console :
+1. Le **bracelet** mesure un BPM toutes les secondes et envoie une moyenne toutes les 10 secondes.
+2. Toutes les 40 secondes, il simule une **crise cardiaque (BPM ≈ 180)**.
+3. Le **boîtier** relaie ces données au **broker kafka**.
+4. Le **cloud** récupère les valeurs du kafka et les enregistre dans l'influxDB si celles-ci sont valides
+5. Le backend de l'interface web récupère les données de la DB à la demande du client web.
 
    ```
    [SMS SERVER] Would send SMS to +33612345678: "Alerte BPM=182"
@@ -124,16 +117,6 @@ Tu verras la courbe de rythme cardiaque :
 | Relancer un seul service | `docker-compose up --build bracelet-simulator` |
 
 ---
-
-## 🩵 Exemple de log attendu
-
-```
-[Bracelet] ⚠️ CRISE DÉTECTÉE BPM=182
-[Boîtier] Received BPM: 182
-[Cloud] ⚠️ CRISE DÉTECTÉE !
-[Cloud] SMS alert sent with status 200
-[SMS SERVER] Would send SMS to +33612345678: "Alerte BPM=182"
-```
 
 
 ## 👩‍💻 Auteur
